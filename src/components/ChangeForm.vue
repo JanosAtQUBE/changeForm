@@ -172,6 +172,22 @@ const form = reactive({
   rollback: '',
 });
 
+function moveStepUp(index: number) {
+  if (index > 0) {
+    const step = deploymentStore.steps[index];
+    deploymentStore.steps.splice(index, 1);
+    deploymentStore.steps.splice(index - 1, 0, step);
+  }
+}
+
+function moveStepDown(index: number) {
+  if (index < deploymentStore.steps.length - 1) {
+    const step = deploymentStore.steps[index];
+    deploymentStore.steps.splice(index, 1);
+    deploymentStore.steps.splice(index + 1, 0, step);
+  }
+}
+
 function submitForm() {
   console.log('Form submitted:', form);
   alert('Form submitted! Check console for data.');
@@ -282,66 +298,80 @@ function submitForm() {
             <h3>1. Preparation Stage</h3>
           </div>
           <div class="deployment-plan--steps">
-            <div v-for="(step, index) in computedStepsPrep" :key="index" class="deployment-plan--step">
-              <div class="deployment-plan--step-title">Step 1.{{ index + 1 }} - {{ step.stage }}</div>
-              <div class="deployment-plan--step-wrapper">
-                <div class="deployment-plan--step-detail deployment-plan--task-title">
-                  <label :for="`task-title-${index}`">Task Title</label>
-                  <input :id="`task-title-${index}`" v-model="step.taskTitle" placeholder="Task" />
+            <TransitionGroup name="deploymentstep" tag="ul">
+              <li v-for="(step, index) in computedStepsPrep" :key="step.id" class="deployment-plan--step">
+                <div class="deployment-plan--step-header">
+                  <div class="deployment-plan--step-title">{{ step.stage }} - Step 1.{{ index + 1 }} </div>
+                  <div class="deployment-plan--step-move">
+                    <div class="deployment-plan--step-move-up">
+                      <button type="button" @click="moveStepUp(index)" :disabled="index === 0">Move Up</button>
+                    </div>
+                    <div class="deployment-plan--step-move-down">
+                      <button type="button" @click="moveStepDown(index)" :disabled="index === computedStepsPrep.length - 1">Move Down</button>
+                    </div>
+                  </div>
                 </div>
-                <div class="deployment-plan--step-detail">
-                  <label :for="`required-time-${index}`">Required Time (min)</label>
-                  <input :id="`required-time-${index}`" v-model.number="step.requiredTime" type="number" placeholder="Required Time (min)" />
+                
+                <div class="deployment-plan--step-wrapper">
+                  <div class="deployment-plan--step-detail deployment-plan--task-title">
+                    <label :for="`task-title-${index}`">Task Title</label>
+                    <input :id="`task-title-${index}`" v-model="step.taskTitle" placeholder="Task" />
+                  </div>
+                  <div class="deployment-plan--step-detail">
+                    <label :for="`required-time-${index}`">Required Time (min)</label>
+                    <input :id="`required-time-${index}`" v-model.number="step.requiredTime" type="number" placeholder="Required Time (min)" />
+                  </div>
                 </div>
-              </div>
-              <div class="deployment-plan--step-wrapper">
-                <div class="deployment-plan--step-detail">
-                  <label :for="`task-description-${index}`">Task Description</label>
-                  <textarea :id="`task-description-${index}`" v-model="step.taskDescription" placeholder="Task Description"></textarea>
+                <div class="deployment-plan--step-wrapper">
+                  <div class="deployment-plan--step-detail">
+                    <label :for="`task-description-${index}`">Task Description</label>
+                    <textarea :id="`task-description-${index}`" v-model="step.taskDescription" placeholder="Task Description"></textarea>
+                  </div>
                 </div>
-              </div>
-              <div class="deployment-plan--step-wrapper">
-                <div class="deployment-plan--step-detail">
-                  <label :for="`planned-start-${index}`">Planned Start Time</label>
-                  <input :id="`planned-start-${index}`" v-model="step.plannedStart" type="datetime-local" placeholder="Planned Start Time" />
+                <div class="deployment-plan--step-wrapper">
+                  <div class="deployment-plan--step-detail">
+                    <label :for="`planned-start-${index}`">Planned Start Time</label>
+                    <input :id="`planned-start-${index}`" v-model="step.plannedStart" type="datetime-local" placeholder="Planned Start Time" />
+                  </div>
+                  <div class="deployment-plan--step-detail">
+                    <label :for="`planned-end-${index}`">Planned End Time</label>
+                    <input :id="`planned-end-${index}`" v-model="step.plannedEnd" type="datetime-local" placeholder="Planned End Time" />
+                  </div>
+                  <div class="deployment-plan--step-detail">
+                    <label :for="`actual-start-${index}`">Actual Start Time</label>
+                    <input :id="`actual-start-${index}`" v-model="step.actualStart" type="datetime-local" placeholder="Actual Start Time" disabled />
+                  </div>
+                  <div class="deployment-plan--step-detail">
+                    <label :for="`actual-end-${index}`">Actual End Time</label>
+                    <input :id="`actual-end-${index}`" v-model="step.actualEnd" type="datetime-local" placeholder="Actual End Time" disabled/>
+                  </div>
                 </div>
-                <div class="deployment-plan--step-detail">
-                  <label :for="`planned-end-${index}`">Planned End Time</label>
-                  <input :id="`planned-end-${index}`" v-model="step.plannedEnd" type="datetime-local" placeholder="Planned End Time" />
+                <div class="deployment-plan--step-wrapper">
+                  <div class="deployment-plan--step-detail">
+                    <label :for="`status-${index}`">Status</label>
+                    <select :id="`status-${index}`" v-model="step.status">
+                      <option value="Open">Open</option>
+                      <option value="In Progress">In Progress</option>
+                      <option value="Completed">Completed</option>
+                    </select>
+                  </div>
+                  <div class="deployment-plan--step-detail">
+                    <label :for="`allocated-person-${index}`">Allocated Person</label>
+                    <input :id="`allocated-person-${index}`" v-model="step.allocatedPerson" placeholder="Allocated Person" />
+                  </div>
                 </div>
-                <div class="deployment-plan--step-detail">
-                  <label :for="`actual-start-${index}`">Actual Start Time</label>
-                  <input :id="`actual-start-${index}`" v-model="step.actualStart" type="datetime-local" placeholder="Actual Start Time" disabled />
+                <div class="deployment-plan--step-wrapper">
+                  <div class="deployment-plan--step-detail">
+                    <label :for="`comments-${index}`">Comments</label>
+                    <textarea :id="`comments-${index}`" v-model="step.comments" placeholder="Comments"></textarea>
+                  </div>
                 </div>
-                <div class="deployment-plan--step-detail">
-                  <label :for="`actual-end-${index}`">Actual End Time</label>
-                  <input :id="`actual-end-${index}`" v-model="step.actualEnd" type="datetime-local" placeholder="Actual End Time" disabled/>
+                <div class="deployment-plan--step-actions">
+                  <button type="button" @click="removeStep(index, step.id)">Remove Step</button>
                 </div>
-              </div>
-              <div class="deployment-plan--step-wrapper">
-                <div class="deployment-plan--step-detail">
-                  <label :for="`status-${index}`">Status</label>
-                  <select :id="`status-${index}`" v-model="step.status">
-                    <option value="Open">Open</option>
-                    <option value="In Progress">In Progress</option>
-                    <option value="Completed">Completed</option>
-                  </select>
-                </div>
-                <div class="deployment-plan--step-detail">
-                  <label :for="`allocated-person-${index}`">Allocated Person</label>
-                  <input :id="`allocated-person-${index}`" v-model="step.allocatedPerson" placeholder="Allocated Person" />
-                </div>
-              </div>
-              <div class="deployment-plan--step-wrapper">
-                <div class="deployment-plan--step-detail">
-                  <label :for="`comments-${index}`">Comments</label>
-                  <textarea :id="`comments-${index}`" v-model="step.comments" placeholder="Comments"></textarea>
-                </div>
-              </div>
-              <div class="deployment-plan--step-actions">
-                <button type="button" @click="removeStep(index, step.id)">Remove Step</button>
-              </div>
-            </div>
+              </li>
+            </TransitionGroup>
+
           </div>
           <!-- Add new step button -->
           <button type="button" @click="addPreparationStep">Add Step</button>
@@ -352,7 +382,7 @@ function submitForm() {
           </div>
           <div class="deployment-plan--steps">
             <div v-for="(step, index) in computedStepsImplementation" :key="index" class="deployment-plan--step">
-              <div class="deployment-plan--step-title">Step 2.{{ index + 1 }} - {{ step.stage }}</div>
+              <div class="deployment-plan--step-title">{{ step.stage }} - Step 2.{{ index + 1 }}</div>
               <div class="deployment-plan--step-wrapper">
                 <div class="deployment-plan--step-detail deployment-plan--task-title">
                   <label for="task-title-{{ index }}">Task Title</label>
@@ -430,7 +460,7 @@ function submitForm() {
           </div>
           <div class="deployment-plan--steps">
             <div v-for="(step, index) in computedStepsVerification" :key="index" class="deployment-plan--step">
-              <div class="deployment-plan--step-title">Step 3.{{ index + 1 }} - {{ step.stage }}</div>
+              <div class="deployment-plan--step-title">{{ step.stage }} - Step 3.{{ index + 1 }}</div>
               <div class="deployment-plan--step-wrapper">
                 <div class="deployment-plan--step-detail deployment-plan--task-title">
                   <label for="task-title-{{ index }}">Task Title</label>
@@ -508,7 +538,7 @@ function submitForm() {
           </div>
           <div class="deployment-plan--steps">
             <div v-for="(step, index) in computedStepsFinalization" :key="index" class="deployment-plan--step">
-              <div class="deployment-plan--step-title">Step 4.{{ index + 1 }} - {{ step.stage }}</div>
+              <div class="deployment-plan--step-title">{{ step.stage }} - Step 4.{{ index + 1 }}</div>
               <div class="deployment-plan--step-wrapper">
                 <div class="deployment-plan--step-detail deployment-plan--task-title">
                   <label for="task-title-{{ index }}">Task Title</label>
@@ -586,7 +616,7 @@ function submitForm() {
           </div>
           <div class="deployment-plan--steps">
             <div v-for="(step, index) in computedStepsRollback" :key="index" class="deployment-plan--step">
-              <div class="deployment-plan--step-title">Step 5.{{ index + 1 }} - {{ step.stage }}</div>
+              <div class="deployment-plan--step-title">{{ step.stage }} - Step 5.{{ index + 1 }}</div>
               <div class="deployment-plan--step-wrapper">
                 <div class="deployment-plan--step-detail deployment-plan--task-title">
                   <label for="task-title-{{ index }}">Task Title</label>
@@ -676,6 +706,26 @@ function submitForm() {
 
 .save-changes {
   margin-top: 20px;
+}
+
+.deploymentstep-move,
+.deploymentstep-enter-active,
+.deploymentstep-leave-active {
+  transition: all 0.5s cubic-bezier(0.55, 0, 0.1, 1);
+}
+
+.deploymentstep-enter-active {
+  position: relative;
+}
+
+.deploymentstep-enter-from,
+.deploymentstep-leave-to {
+  opacity: 0;
+  transform: scaleY(0.01) translate(30px, 0);
+}
+
+.deploymentstep-leave-active {
+  position: absolute;
 }
 
 form {
@@ -778,7 +828,6 @@ form {
     &--step-title {
       font-size: 1.25rem;
       font-weight: bold;
-      margin-bottom: 0.5rem;
     }
 
     &--steps {
@@ -786,6 +835,16 @@ form {
       flex-direction: column;
       flex-wrap: wrap;
       gap: 1rem;
+
+      ul {
+        padding: 0;
+
+        li {
+          list-style: none;
+          
+        }
+      }
+
     }
 
     &--step {
@@ -813,13 +872,32 @@ form {
 
     }
 
+    &--step-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1rem;
+    }
+
+    &--step-move {
+      display: flex;
+      flex-direction: row;
+      gap: 1rem;
+      
+    }
+
     &--stage {
       padding: 1rem;
       border: 1px solid #ddd;
       border-radius: 0.5rem;
       background-color: rgba(240, 240, 240, 0.8);
-
       margin-bottom: 2rem;
+
+      h3 {
+        margin-bottom: 1rem;
+        font-size: 1.25rem;
+      }
+      
       button {
         margin: 1rem 0 0 0;
       }
@@ -838,42 +916,64 @@ form {
   }
 
   // Light theme
-    @media (prefers-color-scheme: light) {
-      label {
-        color: #333;
-      }
-      input,
-      select,
-      textarea {
-        background: #fafbfc;
-        color: #222;
-        border: 1px solid #ccc;
-      }
-      input:focus,
-      select:focus,
-      textarea:focus {
-        border-color: #0078d4;
-      }
+  @media (prefers-color-scheme: light) {
+    label {
+      color: #333;
     }
-
-    // Dark theme
-    @media (prefers-color-scheme: dark) {
-      label {
-        color: #e0e0e0;
-      }
-      input,
-      select,
-      textarea {
-        background: #23272f;
-        color: #f3f3f3;
-        border: 1px solid #444;
-      }
-      input:focus,
-      select:focus,
-      textarea:focus {
-        border-color: #4f8cff;
+    input,
+    select,
+    textarea {
+      background: #fafbfc;
+      color: #222;
+      border: 1px solid #ccc;
+    }
+    input:focus,
+    select:focus,
+    textarea:focus {
+      border-color: #0078d4;
+    }
+    .deployment-plan--stage {
+      background-color: #f5f7fa;
+      border-color: #dbe2ea;
+      
+      li {
+        background: #f5f7fa;
       }
     }
   }
+
+  // Dark theme
+  @media (prefers-color-scheme: dark) {
+    label {
+      color: #e0e0e0;
+    }
+    input,
+    select,
+    textarea {
+      background: #23272f;
+      color: #f3f3f3;
+      border: 1px solid #444;
+
+      &:focus {
+        border-color: #4f8cff;
+      }
+
+      &:disabled {
+        background: #2c2f33;
+        color: #99aab5;
+        border: 1px solid #444;
+      }
+
+    }
+    .deployment-plan--stage {
+      background-color: #23272f;
+      border-color: #444;
+      
+      li {
+        background: #23272f;
+      }
+    }
+  }
+}
 
 </style>
